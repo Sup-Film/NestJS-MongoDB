@@ -1,26 +1,31 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { UpdateOrderDto } from './dto/update-order.dto';
+import { Order, OrderDocument } from './schemas/order.schema';
+import { Model } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
+import { ProductsService } from 'src/products/products.service';
 
 @Injectable()
 export class OrdersService {
-  create(createOrderDto: CreateOrderDto) {
-    return 'This action adds a new order';
+  // ใช้ InjectModel เพื่อฉีดโมเดล Order เข้าไปใน service นี้
+  constructor(
+    @InjectModel(Order.name) private readonly orderModel: Model<OrderDocument>,
+    private productsService: ProductsService, // ใช้ ProductsService เพื่อจัดการกับ Product
+  ) {}
+
+  async create(createOrderDto: CreateOrderDto): Promise<Order> {
+    const product = await this.productsService.findOne(
+      createOrderDto.productId,
+    );
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    const createOrder = new this.orderModel(createOrderDto);
+    return createOrder.save();
   }
 
-  findAll() {
-    return `This action returns all orders`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} order`;
-  }
-
-  update(id: number, updateOrderDto: UpdateOrderDto) {
-    return `This action updates a #${id} order`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} order`;
+  async findOne(id: string): Promise<Order | null> {
+    return this.orderModel.findById(id).populate('productId').exec();
   }
 }

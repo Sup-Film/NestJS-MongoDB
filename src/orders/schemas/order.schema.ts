@@ -5,6 +5,7 @@ export type OrderDocument = Order & Document;
 
 @Schema()
 export class Order {
+  // ประกาศให้ productID เป็น ObjectId ที่อ้างอิงกับ Product schema
   @Prop({ type: Types.ObjectId, ref: 'Product', required: true })
   productId: Types.ObjectId;
 
